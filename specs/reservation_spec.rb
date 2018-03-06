@@ -6,8 +6,8 @@ describe 'Reservation Class' do
     before do
       start_date = Date.parse('2018-04-01')
       end_date = Date.parse('2018-04-05')
-      room = Hotel::Room.new(1)
-      @reservation = Hotel::Reservation.new(start_date, end_date, room)
+      @room = Hotel::Room.new(1)
+      @reservation = Hotel::Reservation.new(start_date, end_date, @room)
     end
 
     it 'has a date range' do
@@ -23,15 +23,15 @@ describe 'Reservation Class' do
     it 'returns an error for invalid dates' do
 
       proc {
-        Hotel::Reservation.new('2018-04-01', Date.parse('2018-04-05'), 1)
+        Hotel::Reservation.new('2018-04-01', Date.parse('2018-04-05'), @room)
       }.must_raise ArgumentError
 
       proc {
-        Hotel::Reservation.new(Date.parse('2018-04-05'), Date.parse('2018-04-01'), 1)
+        Hotel::Reservation.new(Date.parse('2018-04-05'), Date.parse('2018-04-01'), @room)
       }.must_raise ArgumentError
 
       proc {
-        Hotel::Reservation.new(Date.parse('2018-02-05'), Date.parse('2018-04-05'), 1)
+        Hotel::Reservation.new(Date.parse('2018-02-05'), Date.parse('2018-04-05'), @room)
       }.must_raise ArgumentError
     end
   end

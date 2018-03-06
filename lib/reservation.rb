@@ -6,9 +6,9 @@ module Hotel
     attr_reader :room, :dates
 
     def initialize(start_date, end_date, room)
-      # if Date.valid_date?(start_date) == false || Date.valid_date?(end_date) == false
-      #   raise ArgumentError.new("Invalid start or end date")
-      # end
+      if start_date.class != Date || end_date.class != Date
+        raise ArgumentError.new("Invalid start or end date")
+      end
 
       if end_date < start_date
         raise ArgumentError.new("End date must be after start date")
