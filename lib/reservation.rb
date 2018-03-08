@@ -3,9 +3,9 @@ require_relative 'room'
 
 module Hotel
   class Reservation
-    attr_reader :room, :dates
+    attr_reader :room, :dates, :id
 
-    def initialize(start_date, end_date, room)
+    def initialize(start_date, end_date, room, id)
       if start_date.class != Date || end_date.class != Date
         raise ArgumentError.new("Invalid start or end date")
       end
@@ -20,16 +20,17 @@ module Hotel
 
       @room = room
       @dates = to_date(start_date, end_date)
+      @id = id
 
     end
 
     def to_date(start_date, end_date)
-      dates = (start_date..end_date).to_a
+      dates = (start_date...end_date).to_a
       return dates
     end
 
     def cost
-      total = ( dates.length - 1 ) * 200
+      total = ( dates.length ) * 200
       return total.round(2)
     end
   end

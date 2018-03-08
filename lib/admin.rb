@@ -7,18 +7,17 @@ require_relative 'reservation'
 
 module Hotel
   class Admin
-    attr_reader :rooms
-    attr_accessor :reservations
-
+    attr_reader :rooms, :reservations
 
     def initialize
       @rooms = all_rooms
       @reservations = []
+      @blocks = []
     end
 
     def all_rooms
       room_array = []
-        x = 1
+      x = 1
       20.times do
         room_array << Hotel::Room.new(x)
         x += 1
@@ -26,17 +25,15 @@ module Hotel
       return room_array
     end
 
-    # def find_room
-    #   room = @rooms.find { |room| room.status == :available }
-    #   room.status = :unavailable
-    #   return room
-    # end
-
     def reserve_room(start_date, end_date)
-      room = available_rooms(start_date, end_date)[0]
-      reservation = Hotel::Reservation.new(start_date, end_date, room)
+      if available_rooms(start_date, end_date).empty?
+        raise StandardError.new('no available rooms')
+      end
 
-      room.status = :unavailable
+      room = available_rooms(start_date, end_date)[0]
+      id = ( @reservations.length + 1 )
+      reservation = Hotel::Reservation.new(start_date, end_date, room, id)
+
       @reservations << reservation
 
       return reservation
@@ -66,17 +63,62 @@ module Hotel
 
       res_dates.each do |date|
         find_reservations(date).each do |reservation|
-          if res_dates.first == reservation.dates.last
-          else
-            unavailable_rooms << reservation.room
-          end
+          unavailable_rooms << reservation.room
         end
       end
-      if unavailable_rooms.length == 20
-        raise ArgumentError.new('No available rooms')
-      else
-        return ( @rooms - unavailable_rooms )
+
+      res_dates.each do |date|
+        find_block(date).each do |block|
+          unavailable_rooms << block.room
+        end
       end
+
+      unavailable_rooms = unavailable_rooms.flatten.uniq
+
+      return ( @rooms - unavailable_rooms )
+    end
+
+    def reserve_block(start_date, end_date, num_rooms)
+      if num_rooms > 5
+        raise ArgumentError.new("Blocks cannot be greater than 5 rooms")
+      end
+
+      if available_rooms(start_date, end_date).empty? || available_rooms(start_date, end_date).length < num_rooms
+        raise StandardError.new("Not enough available rooms")
+      end
+
+      rooms = available_rooms(start_date, end_date).take(num_rooms)
+      id = @blocks.length + 1
+
+      new_block = Hotel::Block.new(start_date, end_date, rooms, id)
+
+      @blocks << new_block
+      return new_block
+    end
+
+    def find_block(date)
+      block_by_date = []
+      @blocks.each do |block|
+        if block.dates.include?(date)
+          block_by_date << block
+        end
+      end
+      block_by_date.uniq!
+      return block_by_date
+    end
+
+    def reserve_blocked_room(block_id)
+      if @blocks.empty? || block_id.class != Integer
+        raise ArgumentError("Not a valid Block id")
+      end
+      @blocks[block_id - 1].reserve_room
+    end
+
+    def block_available_rooms(block_id)
+      if @blocks.empty? || block_id.class != Integer || block_id < 1
+        raise ArgumentError.new("Not a valid Block id")
+      end
+      @blocks[block_id - 1].room
     end
   end
 end

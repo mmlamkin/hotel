@@ -24,6 +24,13 @@ describe 'Room Class' do
     end
   end
 
-
-
+  # describe 'reserve' do
+  #   before do
+  #     @room = Hotel::Room.new(1)
+  #     @date = Date.parse('2018-04-01')
+  #   end
+  #
+  #   it 'adds a '
+  #
+  # end
 end

@@ -7,13 +7,13 @@ describe 'Reservation Class' do
       start_date = Date.parse('2018-04-01')
       end_date = Date.parse('2018-04-05')
       @room = Hotel::Room.new(1)
-      @reservation = Hotel::Reservation.new(start_date, end_date, @room)
+      @reservation = Hotel::Reservation.new(start_date, end_date, @room, 1)
     end
 
     it 'has a date range' do
       @reservation.dates.must_be_kind_of Array
       @reservation.dates[0].must_be_instance_of Date
-      @reservation.dates.length.must_equal 5
+      @reservation.dates.length.must_equal 4
     end
 
     it 'has an assigned room' do
@@ -23,15 +23,15 @@ describe 'Reservation Class' do
     it 'returns an error for invalid dates' do
 
       proc {
-        Hotel::Reservation.new('2018-04-01', Date.parse('2018-04-05'), @room)
+        Hotel::Reservation.new('2018-04-01', Date.parse('2018-04-05'), @room, 1)
       }.must_raise ArgumentError
 
       proc {
-        Hotel::Reservation.new(Date.parse('2018-04-05'), Date.parse('2018-04-01'), @room)
+        Hotel::Reservation.new(Date.parse('2018-04-05'), Date.parse('2018-04-01'), @room, 1)
       }.must_raise ArgumentError
 
       proc {
-        Hotel::Reservation.new(Date.parse('2018-02-05'), Date.parse('2018-04-05'), @room)
+        Hotel::Reservation.new(Date.parse('2018-02-05'), Date.parse('2018-04-05'), @room, 1)
       }.must_raise ArgumentError
     end
   end
@@ -41,7 +41,7 @@ describe 'Reservation Class' do
       start_date = Date.parse('2018-04-01')
       end_date = Date.parse('2018-04-05')
       room = Hotel::Room.new(1)
-      @reservation = Hotel::Reservation.new(start_date, end_date, room)
+      @reservation = Hotel::Reservation.new(start_date, end_date, room, 1)
     end
 
     it 'totals the cost of the reservation' do

@@ -23,20 +23,6 @@ describe "Admin class" do
     end
   end
 
-  # describe 'find_room' do
-  #   it 'returns an instance of room' do
-  #     admin = Hotel::Admin.new
-  #     admin.find_room.must_be_instance_of Hotel::Room
-  #   end
-  # #
-  #   it 'returns an available room and changes status to unavailable' do
-  #     admin = Hotel::Admin.new
-  #     admin.rooms[0].status.must_equal :available
-  #     admin.find_room
-  #     admin.rooms[0].status.must_equal :unavailable
-  #   end
-  # end
-
   describe 'reserve room' do
     before do
       @admin = Hotel::Admin.new
@@ -65,6 +51,12 @@ describe "Admin class" do
       @admin.reserve_room(@start_date, @end_date).room.room_number.must_equal 1
       @admin.reserve_room(@end_date, @end_date + 1).room.room_number.must_equal 1
     end
+
+    it 'raises an error if there are no available rooms' do
+      proc { 21.times do
+        @admin.reserve_room(@start_date, @end_date)
+      end }.must_raise StandardError
+    end
   end
 
   describe 'find_reservations' do
@@ -86,14 +78,6 @@ describe "Admin class" do
 
     end
 
-    it 'chooses an available room and changes status to unavailable' do
-      start_date = Date.parse('2018-04-01')
-      end_date = Date.parse('2018-04-05')
-      @admin = Hotel::Admin.new
-      @admin.rooms[0].status.must_equal :available
-      @admin.reserve_room(start_date, end_date)
-      @admin.rooms[0].status.must_equal :unavailable
-    end
   end
 
   describe 'reservation cost' do
@@ -127,17 +111,125 @@ describe "Admin class" do
       @room_array = @admin.available_rooms(@start_date, @end_date)
     end
 
-    it 'returns an array of available rooms' do
+    it 'returns an array of rooms' do
       @room_array.must_be_kind_of Array
       @room_array[0].must_be_instance_of Hotel::Room
-      @room_array[0].status.must_equal :available
     end
 
-    it 'raises an error if there are no available rooms' do
-      proc { 21.times do
+    it 'does not return rooms that are in a block or other reservation' do           @admin.available_rooms(@start_date, @end_date).length.must_equal 20
+      @admin.reserve_room(@start_date, @end_date)
+      @admin.available_rooms(@start_date, @end_date).length.must_equal 19
+      @admin.reserve_block(@start_date, @end_date, 4)
+      @admin.available_rooms(@start_date, @end_date).length.must_equal 15
+    end
+
+
+  end
+
+  describe 'reserve_block' do
+    before do
+      @admin =  Hotel::Admin.new
+      @start_date = Date.parse('2018-04-01')
+      @end_date = Date.parse('2018-04-05')
+    end
+    it 'creates new instance of Block' do
+      @admin.reserve_block(@start_date, @end_date, 5).must_be_instance_of Hotel::Block
+    end
+
+    it 'raises an error for blocks of more than 5 rooms' do
+      proc { @admin.reserve_block(@start_date, @end_date, 6) }.must_raise ArgumentError
+    end
+
+    it 'raises an error if there are not enough available rooms' do
+      20.times do
         @admin.reserve_room(@start_date, @end_date)
-      end }.must_raise ArgumentError
+      end
+
+      proc { @admin.reserve_block(@start_date, @end_date, 3) }.must_raise StandardError
     end
 
+    it 'does not allow overlapping room reservations' do
+      block_one = @admin.reserve_block(@start_date, @end_date, 5)
+      block_two = @admin.reserve_block(@start_date, @end_date, 5)
+
+      block_one.room[0].room_number.wont_equal block_two.room[0].room_number
+      block_one.room[4].room_number.wont_equal block_two.room[4].room_number
+    end
+  end
+
+  describe 'find_block' do
+    before do
+      @admin = Hotel::Admin.new
+      @start_date = Date.parse('2018-04-01')
+      @end_date = Date.parse('2018-04-05')
+    end
+
+    it 'returns an array' do
+      @admin.find_block(@start_date).must_be_kind_of Array
+    end
+
+    it 'returns all blocks that include a date' do
+      @admin.find_block(@start_date).length.must_equal 0
+      @admin.reserve_block(@start_date, @end_date, 5)
+      @admin.find_block(@start_date).length.must_equal 1
+      @admin.reserve_block(@start_date, @end_date, 3)
+      @admin.find_block(@start_date).length.must_equal 2
+    end
+
+    describe 'reserve_blocked_room' do
+      before do
+        @admin = Hotel::Admin.new
+        @start_date = Date.parse('2018-04-01')
+        @end_date = Date.parse('2018-04-05')
+        @block = @admin.reserve_block(@start_date, @end_date, 5)
+      end
+
+      it 'moves a room of that block into Hotel::Block @booked_rooms' do
+        first_room = @block.room[0]
+        @block.room.length.must_equal 5
+        @block.booked_rooms.length.must_equal 0
+        @admin.reserve_blocked_room(1)
+        @block.room.length.must_equal 4
+        @block.booked_rooms.length.must_equal 1
+        @block.booked_rooms[0].must_equal first_room
+      end
+
+      it 'throws an error if given invalid id' do
+        proc { @admin.block_available_rooms('') }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms(-2) }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms() }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms("string") }.must_raise ArgumentError
+      end
+    end
+
+    describe 'block_available_rooms' do
+      before do
+        @admin = Hotel::Admin.new
+        @start_date = Date.parse('2018-04-01')
+        @end_date = Date.parse('2018-04-05')
+        @block = @admin.reserve_block(@start_date, @end_date, 5)
+      end
+
+      it 'returns a list of available rooms in a block' do
+        @admin.block_available_rooms(1).must_be_kind_of Array
+        @admin.block_available_rooms(1)[0].must_be_instance_of Hotel::Room
+        @admin.block_available_rooms(1).length.must_equal 5
+        @admin.reserve_blocked_room(1)
+        @admin.block_available_rooms(1).length.must_equal 4
+      end
+
+      it 'throws an error if given invalid id' do
+        proc { @admin.block_available_rooms('') }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms(-2) }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms() }.must_raise ArgumentError
+
+        proc { @admin.block_available_rooms("string") }.must_raise ArgumentError
+      end
+    end
   end
 end
