@@ -49,12 +49,13 @@ module Hotel
       return reservations_by_date
     end
 
-    def reservation_cost(reservation)
-      if @reservations.include?(reservation) == false || @reservations.length == 0 || reservation.class != Hotel::Reservation
-        raise ArgumentError.new("Not a valid reservation")
-      else
-        return reservation.cost
+    def reservation_cost(reservation_id)
+      if @reservations.empty? || reservation_id.class != Integer || reservation_id < 1 || @reservations[reservation_id - 1] == nil || reservation_id == nil
+        raise ArgumentError.new("Not a valid Reservation id")
       end
+
+      return @reservations[reservation_id - 1].cost
+
     end
 
     def available_rooms(start_date, end_date)
@@ -83,7 +84,7 @@ module Hotel
         raise ArgumentError.new("Blocks cannot be greater than 5 rooms")
       end
 
-      if available_rooms(start_date, end_date).empty? || available_rooms(start_date, end_date).length < num_rooms
+      if available_rooms(start_date, end_date).length < num_rooms
         raise StandardError.new("Not enough available rooms")
       end
 

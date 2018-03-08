@@ -44,7 +44,10 @@ describe "Admin class" do
     it 'does not allow overlapping room reservations' do
       res_one = @admin.reserve_room(@start_date, @end_date)
       res_two = @admin.reserve_room(@start_date, @end_date)
+      res_three = @admin.reserve_room(@start_date + 1, @end_date + 3)
       res_one.room.room_number.wont_equal res_two.room.room_number
+      res_three.room.room_number.wont_equal res_two.room.room_number
+
     end
 
     it 'allows a room reservation to start on the same day another reservation ends' do
@@ -62,10 +65,12 @@ describe "Admin class" do
   describe 'find_reservations' do
     before do
       @admin = Hotel::Admin.new
+
     end
     it 'returns an array of reservations' do
       start_date = Date.parse('2018-04-01')
       end_date = Date.parse('2018-04-05')
+
       @admin.find_reservations(start_date).must_be_instance_of Array
 
       @admin.find_reservations(start_date).length.must_equal 0
@@ -75,31 +80,38 @@ describe "Admin class" do
       @admin.find_reservations(start_date)[0].must_be_instance_of Hotel::Reservation
 
       @admin.find_reservations(start_date).length.must_equal 1
-
     end
-
   end
 
   describe 'reservation cost' do
+    before do
+      @admin = Hotel::Admin.new
+      @start_date = Date.parse('2018-04-01')
+      @end_date = Date.parse('2018-04-05')
+    end
+
     it 'returns the cost of the reservation' do
-      admin = Hotel::Admin.new
-      start_date = Date.parse('2018-04-01')
-      end_date = Date.parse('2018-04-05')
-      reservation = admin.reserve_room(start_date, end_date)
-      admin.reservation_cost(reservation).must_equal 800.00
+      reservation = @admin.reserve_room(@start_date, @end_date)
+      id = reservation.id
+      @admin.reservation_cost(id).must_equal 800.00
     end
 
     it 'throws an error if the reservation does not exist' do
-      admin = Hotel::Admin.new
-
       proc {
-        admin.reservation_cost()
+        @admin.reservation_cost()
       }.must_raise ArgumentError
 
       proc {
-        admin.reservation_cost('reservation')
+        @admin.reservation_cost('reservation')
       }.must_raise ArgumentError
 
+      proc {
+        @admin.reservation_cost(-1)
+      }.must_raise ArgumentError
+
+      proc {
+        @admin.reservation_cost(4)
+      }.must_raise ArgumentError
     end
   end
 
@@ -122,8 +134,6 @@ describe "Admin class" do
       @admin.reserve_block(@start_date, @end_date, 4)
       @admin.available_rooms(@start_date, @end_date).length.must_equal 15
     end
-
-
   end
 
   describe 'reserve_block' do
@@ -151,9 +161,13 @@ describe "Admin class" do
     it 'does not allow overlapping room reservations' do
       block_one = @admin.reserve_block(@start_date, @end_date, 5)
       block_two = @admin.reserve_block(@start_date, @end_date, 5)
+      block_three = @admin.reserve_block(@start_date + 2, @end_date + 10, 5)
 
       block_one.room[0].room_number.wont_equal block_two.room[0].room_number
       block_one.room[4].room_number.wont_equal block_two.room[4].room_number
+      block_one.room[0].room_number.wont_equal block_three.room[0].room_number
+
+      @admin.available_rooms(@start_date, @end_date).length.must_equal 5
     end
   end
 
