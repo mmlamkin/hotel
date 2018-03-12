@@ -36,7 +36,7 @@ describe 'Reservation Class' do
     end
   end
 
-  describe 'stay total' do
+  describe 'cost' do
     before do
       start_date = Date.parse('2018-04-01')
       end_date = Date.parse('2018-04-05')

@@ -1,11 +1,13 @@
 require_relative 'spec_helper'
 
 describe "Admin class" do
-  describe "initialize" do
-    before do
-      @admin =  Hotel::Admin.new
-    end
+  before do
+    @admin = Hotel::Admin.new
+    @start_date = Date.parse('2018-04-01')
+    @end_date = Date.parse('2018-04-05')
+  end
 
+  describe "initialize" do
     it 'creates an instance of Admin' do
       @admin.must_be_instance_of Hotel::Admin
     end
@@ -15,7 +17,6 @@ describe "Admin class" do
       @admin.rooms.length.must_equal 20
       @admin.rooms[0].must_be_instance_of Hotel::Room
       @admin.rooms[0].room_number.must_equal 1
-
     end
 
     it 'has an array of reservations' do
@@ -24,18 +25,11 @@ describe "Admin class" do
   end
 
   describe 'reserve room' do
-    before do
-      @admin = Hotel::Admin.new
-      @start_date = Date.parse('2018-04-01')
-      @end_date = Date.parse('2018-04-05')
-    end
     it 'creates an instance of Reservation' do
-
       @admin.reserve_room(@start_date, @end_date).must_be_instance_of Hotel::Reservation
     end
 
     it 'adds reservation information to @reservations' do
-
       @admin.reservations.length.must_equal 0
       @admin.reserve_room(@start_date, @end_date)
       @admin.reservations.length.must_equal 1
@@ -45,9 +39,12 @@ describe "Admin class" do
       res_one = @admin.reserve_room(@start_date, @end_date)
       res_two = @admin.reserve_room(@start_date, @end_date)
       res_three = @admin.reserve_room(@start_date + 1, @end_date + 3)
+      res_four = @admin.reserve_room(@start_date - 4, @end_date + 3)
+      res_five = @admin.reserve_room(@start_date + 1, @end_date - 1)
       res_one.room.room_number.wont_equal res_two.room.room_number
       res_three.room.room_number.wont_equal res_two.room.room_number
-
+      res_four.room.room_number.wont_equal res_one.room.room_number
+      res_five.room.room_number.wont_equal res_one.room.room_number
     end
 
     it 'allows a room reservation to start on the same day another reservation ends' do
@@ -63,33 +60,20 @@ describe "Admin class" do
   end
 
   describe 'find_reservations' do
-    before do
-      @admin = Hotel::Admin.new
-
-    end
     it 'returns an array of reservations' do
-      start_date = Date.parse('2018-04-01')
-      end_date = Date.parse('2018-04-05')
+      @admin.find_reservations(@start_date).must_be_instance_of Array
 
-      @admin.find_reservations(start_date).must_be_instance_of Array
+      @admin.find_reservations(@start_date).length.must_equal 0
 
-      @admin.find_reservations(start_date).length.must_equal 0
+      @admin.reserve_room(@start_date, @end_date)
 
-      @admin.reserve_room(start_date, end_date)
+      @admin.find_reservations(@start_date)[0].must_be_instance_of Hotel::Reservation
 
-      @admin.find_reservations(start_date)[0].must_be_instance_of Hotel::Reservation
-
-      @admin.find_reservations(start_date).length.must_equal 1
+      @admin.find_reservations(@start_date).length.must_equal 1
     end
   end
 
   describe 'reservation cost' do
-    before do
-      @admin = Hotel::Admin.new
-      @start_date = Date.parse('2018-04-01')
-      @end_date = Date.parse('2018-04-05')
-    end
-
     it 'returns the cost of the reservation' do
       reservation = @admin.reserve_room(@start_date, @end_date)
       id = reservation.id
@@ -117,9 +101,6 @@ describe "Admin class" do
 
   describe 'available rooms' do
     before do
-      @admin = Hotel::Admin.new
-      @start_date = Date.parse('2018-04-01')
-      @end_date = Date.parse('2018-04-05')
       @room_array = @admin.available_rooms(@start_date, @end_date)
     end
 
@@ -137,11 +118,6 @@ describe "Admin class" do
   end
 
   describe 'reserve_block' do
-    before do
-      @admin =  Hotel::Admin.new
-      @start_date = Date.parse('2018-04-01')
-      @end_date = Date.parse('2018-04-05')
-    end
     it 'creates new instance of Block' do
       @admin.reserve_block(@start_date, @end_date, 5).must_be_instance_of Hotel::Block
     end
@@ -169,15 +145,15 @@ describe "Admin class" do
 
       @admin.available_rooms(@start_date, @end_date).length.must_equal 5
     end
+    it 'allows a a block of the same rooms to checkin on the checkout date of another block' do
+      block_one = @admin.reserve_block(@start_date, @end_date, 5)
+      block_two = @admin.reserve_block(@end_date, @end_date + 4, 5)
+
+      block_one.room[0].room_number.must_equal block_two.room[0].room_number
+    end
   end
 
   describe 'find_block' do
-    before do
-      @admin = Hotel::Admin.new
-      @start_date = Date.parse('2018-04-01')
-      @end_date = Date.parse('2018-04-05')
-    end
-
     it 'returns an array' do
       @admin.find_block(@start_date).must_be_kind_of Array
     end
@@ -192,9 +168,6 @@ describe "Admin class" do
 
     describe 'reserve_blocked_room' do
       before do
-        @admin = Hotel::Admin.new
-        @start_date = Date.parse('2018-04-01')
-        @end_date = Date.parse('2018-04-05')
         @block = @admin.reserve_block(@start_date, @end_date, 5)
       end
 
@@ -221,9 +194,6 @@ describe "Admin class" do
 
     describe 'block_available_rooms' do
       before do
-        @admin = Hotel::Admin.new
-        @start_date = Date.parse('2018-04-01')
-        @end_date = Date.parse('2018-04-05')
         @block = @admin.reserve_block(@start_date, @end_date, 5)
       end
 
